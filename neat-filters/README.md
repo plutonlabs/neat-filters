@@ -25,7 +25,7 @@ The newest 30 releases are kept.
 
 ### Client update protocol
 
-1. `GET https://github.com/<owner>/neat-filters/releases/latest/download/manifest.json`
+1. `GET https://github.com/plutonlabs/neat-filters/releases/latest/download/manifest.json`
    (send `If-None-Match` with the stored ETag; a `304` means nothing to do).
 2. For each entry in `files` whose `sha256` differs from the local copy, download
    `.../releases/latest/download/<name>` into a temp file.
