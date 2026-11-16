@@ -63,7 +63,7 @@ jobs:
           # Create as a draft, upload everything, then publish, so clients that poll
           # releases/latest never see a release with missing files.
           gh release create "v$VERSION" \
-            dist/manifest.json dist/resources.json dist/*.txt \
+            dist/manifest.json dist/resources.json dist/optional.json dist/*.txt \
             --draft --title "neat-filters $VERSION" --notes-file .cache/release-notes.md
           gh release edit "v$VERSION" --draft=false --latest
 
