@@ -12,6 +12,7 @@ licenses apply to the corresponding output files.
 | [URLhaus filter](https://gitlab.com/malware-filter/urlhaus-filter) (abuse.ch URLhaus data) | `urlhaus.txt` | CC0-1.0 |
 | Third-party lists named in uBlock Origin's `assets.json` (EasyList family, AdGuard, Fanboy, regional lists such as ABPVN, RuAdList, ...) | one file per list, named after its `assets.json` id; the exact address each file was fetched from is in its `source` field in `manifest.json` | each list keeps its own license; follow that address |
 | [HaGeZi DNS blocklists](https://github.com/hagezi/dns-blocklists) (`hagezi-pro.txt`, tier `strong`) | listed in `extraLists` in `sources.json`; fetched from the address in its `source` field | see the repository's LICENSE (linked in the list header) |
+| [HaGeZi DNS blocklists](https://github.com/hagezi/dns-blocklists) NSFW list | `optional-adult.txt` (optional pack, adult-content filter; domains only, one per line) | see the repository's LICENSE (linked in the list header and in `optional.json`) |
 | [brave/adblock-resources](https://github.com/brave/adblock-resources) | Brave's extra resources in `resources.json` | MPL-2.0 |
 
 Build tooling uses [adblock-rust](https://github.com/brave/adblock-rust) (MPL-2.0).

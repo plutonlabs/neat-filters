@@ -83,6 +83,19 @@
       ]
     }
   ],
+  "optionalPacks": [
+    {
+      "id": "adult",
+      "title": "Adult content (HaGeZi NSFW)",
+      "file": "optional-adult.txt",
+      "minDomains": 20000,
+      "license": "https://github.com/hagezi/dns-blocklists/blob/main/LICENSE",
+      "urls": [
+        "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/nsfw.txt",
+        "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/nsfw.txt"
+      ]
+    }
+  ],
   "popups": {
     "name": "popups.txt",
     "title": "Popup rules (converted from $popup and $popunder)",

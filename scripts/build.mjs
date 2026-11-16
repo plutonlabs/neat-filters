@@ -17,6 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { normalize, preprocess } from './preprocess.mjs';
+import { buildOptionalPacks, optionalManifest } from './optional.mjs';
 import { anchorBareHostnames, expandDenyallow, extractDocuments, extractPopups, hostsToRules, isHostsFormat } from './transform.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -357,6 +358,23 @@ async function main() {
   const { lists, reused, skipped } = await buildLists(sources, uAssetsSha, ublockDir, prevLists);
   const resourcesJson = await buildResources(sources, ublockDir, braveSha, toolBin);
 
+  // Optional packs (see optional.mjs): not part of manifest.json, written after the validation below. They must never
+  // stop the lists themselves from being released: if anything goes wrong here, the previous packs are carried over.
+  const readPrev = name => {
+    const f = prevDir && path.join(prevDir, name);
+    return f && fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : null;
+  };
+  let prevOptional = { manifest: null, read: readPrev };
+  let optional = { packs: [] };
+  try {
+    const text = readPrev('optional.json');
+    prevOptional = { manifest: text ? JSON.parse(text) : null, read: readPrev };
+    optional = await buildOptionalPacks(sources, prevOptional, fetchText, log);
+  } catch (e) {
+    log(`optional packs: not rebuilt (${e.message}); keeping the ones of the previous release`);
+    optional = { packs: (prevOptional.manifest?.packs ?? []).filter(p => readPrev(p.file) !== null) };
+  }
+
   fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
 
@@ -382,6 +400,9 @@ async function main() {
   const changedNames = files
     .filter(f => prevFiles.get(f.name)?.sha256 !== f.sha256)
     .map(f => f.name);
+  for (const p of optional.packs) {
+    if (prevOptional.manifest?.packs?.find(q => q.id === p.id)?.sha256 !== p.sha256) changedNames.push(p.file);
+  }
   const removed = [...prevFiles.keys()].filter(n => !files.some(f => f.name === n));
   const changed = changedNames.length > 0 || removed.length > 0 || args.force;
   if (!changed) {
@@ -442,11 +463,21 @@ async function main() {
 
   fs.writeFileSync(path.join(outDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 
+  // The optional packs: their own files and optional.json (clients that only read manifest.json never see them).
+  for (const p of optional.packs) {
+    if (p.body !== undefined) fs.writeFileSync(path.join(outDir, p.file), p.body);
+    else fs.writeFileSync(path.join(outDir, p.file), prevOptional.read(p.file)); // kept from the previous release
+  }
+  fs.writeFileSync(path.join(outDir, 'optional.json'), optionalManifest(optional.packs, version, now.toISOString()));
+
   // Release notes
   const rows = files.map(f => {
     const n = f.kind === 'list' ? `${f.rules.network} network, ${f.rules.cosmetic} cosmetic` : `${f.count} resources`;
     return `| \`${f.name}\` | ${n} | ${changedNames.includes(f.name) ? 'changed' : ''} |`;
   });
+  for (const p of optional.packs) {
+    rows.push(`| \`${p.file}\` (optional pack \`${p.id}\`) | ${p.domains} domains | ${changedNames.includes(p.file) ? 'changed' : ''} |`);
+  }
   const notes = [
     `neat-filters ${version}`,
     '',

@@ -20,6 +20,7 @@ Every release (tag `vYYYY.MM.DD.HHmm`, UTC) contains **all** files, so
 | `<id>.txt` (about 60 files, named by their id in uBO's `assets.json`, e.g. `easylist.txt`, `fanboy-social.txt`, `vie-1.txt`, `rus-0.txt`, `urlhaus-1.txt`) | every list in uBlock Origin's `assets.json` except a few excluded ones (see `sources.json`). uBO-owned lists are **trusted**; the rest are not. Hosts-format lists are rewritten as rules. `manifest.json` records, per file, the address it was fetched from (`source`). If an upstream is down, the previous copy is kept. Files outside uBO's set (`extraLists` in `sources.json`, now `hagezi-pro.txt`) carry `"tier": "strong"` in the manifest so a client can offer them as a separate, stronger option; every other list is `"tier": "standard"` |
 | `popups.txt` | all `$popup` / `$popunder` rules converted to `$document`, for a **second** engine (see [Popup blocking](#popup-blocking)) |
 | `resources.json` | adblock-rust `Resource[]`: uBO redirect resources, uBO scriptlets, Brave's extras |
+| `optional.json`, `optional-<id>.txt` | **optional packs**: lists that are not part of the default set and that a client fetches only when the person switches the matching feature on (today `optional-adult.txt`, the adult-content filter, from HaGeZi's NSFW list). Not listed in `manifest.json`, so clients that only know the manifest never load them (a new pack cannot turn itself on for anyone). See [Optional packs](#optional-packs) |
 
 The newest 30 releases are kept.
 
@@ -126,6 +127,26 @@ node scripts/build.mjs                     # writes dist/
 node scripts/build.mjs --prev path/to/manifest.json
 node scripts/build.mjs --force             # ignore "nothing changed"
 ```
+
+## Optional packs
+
+`optional.json` lists packs; each pack is one plain text file of domains (lower case, sorted, one per
+line; a client blocks the domain and everything below it):
+
+```json
+{ "schema": 1, "version": "2026.11.15.1200", "generated": "…",
+  "packs": [ { "id": "adult", "title": "Adult content (HaGeZi NSFW)", "kind": "domains",
+               "file": "optional-adult.txt", "sha256": "…", "size": 1190000, "domains": 82315,
+               "source": "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/nsfw.txt",
+               "license": "https://github.com/hagezi/dns-blocklists/blob/main/LICENSE" } ] }
+```
+
+Clients fetch `releases/latest/download/optional.json`, then the pack file, and check `sha256` and
+`size`. Packs are declared in `optionalPacks` in `sources.json` (`id`, `title`, `file`, `urls` tried in
+order, `minDomains`). The source may use Adblock Plus syntax (`||example.com^`), hosts syntax or bare
+domains; rules with options, paths, wildcards or exceptions are skipped. As for the lists above, a pack
+whose source is down, or that shrank by more than half, keeps the previous release's copy; with no
+earlier copy it is left out. See `scripts/optional.mjs`.
 
 ## Adding a list
 
